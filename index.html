@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>보험 청구일 계산기</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f6fa;--card:#fff;--text:#1b2433;--sub:#667085;--line:#dde3ee;
+  --accent:#2563eb;--accent-text:#fff;--ok-bg:#e8f7ee;--ok:#12724a;--end-bg:#fff4e5;--end:#9a5a00;--danger:#c62828;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10141c;--card:#1a2130;--text:#eef2f9;--sub:#9aa7bd;--line:#2c3649;
+    --accent:#5b8cff;--accent-text:#0b1020;--ok-bg:#12301f;--ok:#6fe0a6;--end-bg:#35260c;--end:#ffc971;--danger:#ff8a80;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10141c;--card:#1a2130;--text:#eef2f9;--sub:#9aa7bd;--line:#2c3649;
+  --accent:#5b8cff;--accent-text:#0b1020;--ok-bg:#12301f;--ok:#6fe0a6;--end-bg:#35260c;--end:#ffc971;--danger:#ff8a80;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Noto Sans KR","Malgun Gothic",sans-serif;font-size:15px;line-height:1.4}
+.wrap{max-width:480px;margin:0 auto;padding:8px 12px}
+h1{font-size:16px;margin:2px 0 8px}
+h2{font-size:14px;margin:0 0 2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+label{display:block;font-size:12px;color:var(--sub);margin:0 0 3px}
+label.gap{margin-top:8px}
+select,input[type=date],input[type=text],textarea{width:100%;padding:9px 10px;font-size:15px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
+textarea{font-size:12px;min-height:70px}
+.selrow{display:flex;gap:6px;align-items:stretch}
+.selrow select{flex:1;min-width:0}
+.row{display:flex;gap:6px;margin-top:6px}
+button{font-size:14px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:inherit}
+button.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:600}
+button.icon{padding:0 12px;font-size:17px;color:var(--danger);border-color:var(--danger);flex:0 0 auto}
+button.icon.armed{background:var(--danger);color:#fff;font-size:13px;font-weight:700}
+button.save{width:100%;margin-top:7px;padding:9px}
+.row .primary{flex:0 0 auto}
+.row input{flex:1;min-width:0}
+.res{display:flex;justify-content:space-between;align-items:center;gap:4px 8px;flex-wrap:wrap;border-radius:10px;padding:7px 10px;margin-top:5px;font-size:13px}
+.res:first-child{margin-top:0}
+.res b{font-size:15px;white-space:nowrap}
+.rem{font-size:12px;font-weight:700;margin-left:2px}
+.rem.over{opacity:.7}
+.plain{background:var(--bg);border:1px solid var(--line)}
+.start{background:var(--ok-bg);color:var(--ok)}
+.end{background:var(--end-bg);color:var(--end)}
+.hint{font-size:12px;color:var(--sub)}
+.hidden{display:none}
+.rec{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:7px 10px;margin-top:6px;background:var(--bg)}
+.rec .info{flex:1;min-width:0;cursor:pointer;line-height:1.35}
+.rec .nm{font-weight:700;font-size:15px;display:flex;align-items:center;flex-wrap:wrap;gap:2px 8px}
+.pg{flex:1 1 100%;display:flex;align-items:center;gap:6px;min-width:0}
+.bar{flex:1;height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--ok)}
+.bar.m i{background:var(--end)}
+.bar.x i{background:var(--sub)}
+.bar.warn i{background:var(--danger)}
+.pt{font-size:11px;font-weight:400;color:var(--sub);white-space:nowrap}
+.rec .lb{display:inline-block;width:5em;white-space:nowrap;margin-right:.1em;vertical-align:top}
+.rec .lb.sp{letter-spacing:.333em}
+.calrow{flex:1 1 100%;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.calrow button.cal{padding:4px 10px;font-size:12px;color:var(--accent);border-color:var(--accent)}
+.calpanel{width:100%;display:none;flex-direction:column;gap:5px}
+.calpanel.open{display:flex}
+.calpanel a{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;background:var(--card)}
+.calpanel a .dd{font-weight:400;white-space:nowrap;font-size:12px}
+.cbtns{display:flex;gap:6px}
+.editbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;padding:6px 10px;border-radius:10px;background:var(--end-bg);color:var(--end);font-size:12.5px;font-weight:600}
+.editbar button{padding:3px 10px;font-size:12px}
+.editbar.hidden{display:none}
+.rh{display:flex;justify-content:space-between;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:2px 0}
+.rh .hint{display:inline;margin-left:4px}
+.rec.sel{border-color:var(--accent)}
+.det{flex:1 1 100%}
+.det .res{font-size:12.5px;padding:5px 8px;margin-top:4px}
+.det .res:first-child{margin-top:0}
+.det .res b{font-size:13.5px}
+body.viewing #resCard{position:sticky;top:0;z-index:5;padding:6px;box-shadow:0 3px 8px rgba(0,0,0,.15)}
+body.viewing #resCard .res{padding:4px 8px;margin-top:3px;font-size:12.5px}
+body.viewing #resCard .res:first-child{margin-top:0}
+body.viewing #resCard .res b{font-size:13.5px}
+body.viewing #saveRec{display:none}
+.rec.sel{scroll-margin-top:150px}
+.rec .ln{font-size:12.5px;color:var(--sub)}
+.rec .ln.c{color:var(--ok)}
+.rec .tg{font-size:12.5px;font-weight:700;color:var(--ok)}
+.rec .tg.m{color:var(--end)}
+.rec .tg.x{color:var(--sub);font-weight:400}
+.rec .tg.warn{color:var(--danger)}
+.rec button{padding:4px 9px;font-size:12px;color:var(--danger)}
+details summary{cursor:pointer;font-size:14px;font-weight:600}
+.msg{font-size:12px;color:var(--ok);margin-top:5px}
+.foot{font-size:11px;color:var(--sub);padding:0 4px 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="home" role="button" tabindex="0" style="cursor:pointer;-webkit-tap-highlight-color:transparent">🩺 보험 청구일 계산기</h1>
+
+  <div class="card">
+    <label for="sel">진료명</label>
+    <div class="selrow">
+      <select id="sel"></select>
+      <button id="delBtn" class="icon hidden" aria-label="선택한 진료명 삭제" title="선택한 진료명 삭제">🗑</button>
+    </div>
+    <div id="newBox" class="row hidden">
+      <input type="text" id="newName" placeholder="새 진료명 입력 (예: 고혈압)" maxlength="30">
+      <button class="primary" id="addBtn">등록</button>
+    </div>
+    <label for="date" class="gap">진료시작일</label>
+    <input type="date" id="date">
+  </div>
+
+  <div class="card" id="resCard">
+    <div class="hint" id="empty">진료명과 진료시작일을 입력하면 결과가 표시됩니다.</div>
+    <div id="results" class="hidden">
+      <div class="res start"><span id="l1"></span><b id="r1"></b></div>
+      <div class="res end"><span id="l2"></span><b id="r2"></b></div>
+      <div class="res plain"><span id="l3"></span><b id="r3"></b></div>
+      <div class="res plain"><span id="l4"></span><b id="r4"></b></div>
+      <div id="editBar" class="editbar hidden"><span>✏ 진료시작일을 바꾼 뒤 저장하세요</span><button id="cancelEdit">취소</button></div>
+      <button class="primary save" id="saveRec">이 진료 기록 저장</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="recHead" class="rh" role="button" tabindex="0"><span>저장된 진료 기록<span class="hint" id="recCnt"></span></span><span id="recArrow">▾</span></h2>
+    <div id="recBody">
+      <div id="recList"></div>
+      <div class="hint" id="recEmpty">저장된 기록이 없습니다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>백업 / 복원</summary>
+      <div class="hint" style="margin-top:6px">폰을 바꾸거나 브라우저 데이터를 지우기 전에 백업해 두세요. 백업 글자를 메모 앱 등에 붙여 넣어 보관하면 됩니다.</div>
+      <div class="row">
+        <button id="exp" class="primary">백업 만들기</button>
+        <button id="imp" class="primary">복원하기</button>
+      </div>
+      <textarea id="box" placeholder="백업 만들기를 누르면 여기에 표시됩니다. 복원할 때는 백업 글자를 여기에 붙여 넣고 복원하기를 누르세요." style="margin-top:6px"></textarea>
+      <div class="msg hidden" id="bmsg"></div>
+    </details>
+  </div>
+
+  <div class="foot">청구는 진료시작일을 포함해 365일간, 면책은 그 다음 날부터 180일(시작일 포함) 기준입니다. 정확한 기준은 가입하신 약관을 확인하세요.</div>
+</div>
+
+<script>
+(function(){
+  var K_N="ins_names_v1", K_R="ins_records_v1", NEW="__new__";
+  var names=[], recs=[];
+  var $=function(id){return document.getElementById(id);};
+  var sel=$("sel"), dateEl=$("date");
+
+  function rd(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+  function wr(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  function load(){
+    var a=rd(K_N);if(Array.isArray(a))names=a;
+    var r=rd(K_R);if(Array.isArray(r))recs=r;
+  }
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+
+  function parse(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+  function add(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+  var WD=["일","월","화","수","목","금","토"];
+  function short(d){return d.getFullYear()+"."+(d.getMonth()+1)+"."+d.getDate();}
+  function fmt(d){return short(d)+" ("+WD[d.getDay()]+")";}
+  function span(ds){
+    var d0=parse(ds);
+    var cs=d0, ce=add(d0,364);
+    var ms=add(ce,1), free=add(ms,179);
+    return {d0:d0,cs:cs,ce:ce,ms:ms,free:free};
+  }
+
+  var delArmed=false,delT;
+  function delReset(){
+    delArmed=false;clearTimeout(delT);
+    var b=$("delBtn");b.textContent="🗑";b.classList.remove("armed");
+  }
+
+  function renderSelect(pick){
+    sel.innerHTML="";
+    if(names.length){var p=document.createElement("option");p.value="";p.textContent="진료명 선택";sel.appendChild(p);}
+    names.forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n;sel.appendChild(o);});
+    var o=document.createElement("option");o.value=NEW;o.textContent="＋ 새 진료명 등록";sel.appendChild(o);
+    sel.value=(pick!==undefined)?pick:(names.length?"":NEW);
+    sync();
+  }
+  function sync(){
+    var isNew=sel.value===NEW;
+    $("newBox").classList.toggle("hidden",!isNew);
+    $("delBtn").classList.toggle("hidden",isNew||!sel.value);
+    delReset();
+    calc();
+  }
+  function daysLeft(d){var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());return Math.round((d-t)/86400000);}
+  function setR(id,d,withLeft){
+    var b=$(id);b.textContent=fmt(d)+" ";
+    if(withLeft){
+      var n=daysLeft(d),sp=document.createElement("span");
+      sp.className="rem"+(n<0?" over":"");
+      sp.textContent=n>0?"["+n+"일 남음]":(n===0?"[오늘 종료]":"["+(-n)+"일 지남]");
+      b.appendChild(sp);
+    }
+  }
+  function fitLabel(lid,name,word){
+    var l=$(lid),b=l.nextElementSibling;
+    l.textContent=name+" 보험 "+word;
+    if(b.offsetTop>l.offsetTop+2)l.textContent=name+" "+word;
+  }
+  function calc(){
+    var name=sel.value, ds=dateEl.value, ok=name&&name!==NEW&&ds;
+    $("results").classList.toggle("hidden",!ok);
+    $("empty").classList.toggle("hidden",!!ok);
+    if(!ok)return;
+    var s=span(ds);
+    setR("r1",s.cs,false);fitLabel("l1",name,"청구 시작일");
+    setR("r2",s.ce,true);fitLabel("l2",name,"청구 종료일");
+    $("l3").textContent=name+" 면책 시작일";setR("r3",s.ms,false);
+    $("l4").textContent=name+" 면책 종료일";setR("r4",s.free,true);
+  }
+
+  function ymd(d){return d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2);}
+  function gcal(title,d,s){
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(title)+"&dates="+ymd(d)+"/"+ymd(add(d,1))+"&details="+encodeURIComponent("진료시작일 "+short(s.d0));
+  }
+  var openIds={};
+  function syncView(){document.body.classList.toggle("viewing",Object.keys(openIds).length>0&&!editId);}
+  function mkRow(cls,label,d,withLeft){
+    var row=document.createElement("div");row.className="res "+cls;
+    var l=document.createElement("span");l.textContent=label;
+    var b=document.createElement("b");b.textContent=fmt(d)+" ";
+    if(withLeft){
+      var n=daysLeft(d),sp=document.createElement("span");
+      sp.className="rem"+(n<0?" over":"");
+      sp.textContent=n>0?"["+n+"일 남음]":(n===0?"[오늘 종료]":"["+(-n)+"일 지남]");
+      b.appendChild(sp);
+    }
+    row.appendChild(l);row.appendChild(b);return row;
+  }
+  function phase(s){
+    var dl=daysLeft(s.ce);
+    if(dl>=0){var e=Math.max(0,Math.min(365,365-dl));return {k:"c",n:dl,t:"보험청구 남은 기간 "+dl+"일",pct:e/365*100,lab:e+"/365일"};}
+    var dm=daysLeft(s.free);
+    if(dm>=0){var f=Math.max(0,Math.min(180,180-dm));return {k:"m",n:dm,t:"면책 남은 기간 "+dm+"일",pct:f/180*100,lab:f+"/180일"};}
+    return {k:"x",n:100000-dm,t:"기간 종료",pct:100,lab:"완료"};
+  }
+  function renderRecs(){
+    var box=$("recList");box.innerHTML="";
+    var list=recs.map(function(r){var s=span(r.date);return {r:r,s:s,p:phase(s)};})
+      .sort(function(a,b){return a.p.n-b.p.n;});
+    $("recEmpty").classList.toggle("hidden",list.length>0);
+    $("recCnt").textContent="("+list.length+")";
+    list.forEach(function(it){
+      var r=it.r,s=it.s,p=it.p;
+      var div=document.createElement("div");div.className="rec";
+      var info=document.createElement("div");info.className="info";
+      var a=document.createElement("div");a.className="nm";
+      var tt=document.createElement("span");tt.textContent=r.name+" ";
+      var warn=p.k!=="x"&&p.n<=30;
+      var tg=document.createElement("span");tg.className="tg "+p.k+(warn?" warn":"");tg.textContent="("+p.t+")";tt.appendChild(tg);a.appendChild(tt);
+      var pg=document.createElement("div");pg.className="pg";
+      var bar=document.createElement("div");bar.className="bar "+p.k+(warn?" warn":"");
+      var fill=document.createElement("i");fill.style.width=p.pct+"%";bar.appendChild(fill);
+      var pt=document.createElement("span");pt.className="pt";pt.textContent=p.lab;
+      pg.appendChild(bar);pg.appendChild(pt);a.appendChild(pg);
+      info.appendChild(a);
+      [["청구가능일",short(s.cs)+" ~ "+short(s.ce),"ln c"],
+       ["진료시작일",short(s.d0),"ln"],
+       ["면책기간",short(s.ms)+" ~ "+short(s.free),"ln"]].forEach(function(x){
+        var d=document.createElement("div");d.className=x[2];
+        var bl=document.createElement("span");bl.textContent="• ";
+        var lb=document.createElement("span");lb.className="lb"+(x[0].length<5?" sp":"");lb.textContent=x[0];
+        var vl=document.createElement("span");vl.textContent=": "+x[1];
+        d.appendChild(bl);d.appendChild(lb);d.appendChild(vl);info.appendChild(d);
+      });
+      info.onclick=function(){
+        if(names.indexOf(r.name)<0){names.push(r.name);wr(K_N,names);}
+        setEdit(null);
+        if(openIds[r.id]){openIds={};renderRecs();return;}
+        openIds={};openIds[r.id]=true;
+        renderSelect(r.name);dateEl.value=r.date;calc();
+        renderRecs();
+        var se=document.querySelector(".rec.sel");if(se)se.scrollIntoView({block:"nearest"});
+      };
+      var del=document.createElement("button");del.textContent="삭제";
+      var arm=false,tm;
+      del.onclick=function(){
+        if(!arm){
+          arm=true;del.textContent="정말?";
+          tm=setTimeout(function(){arm=false;del.textContent="삭제";},3000);
+          return;
+        }
+        clearTimeout(tm);
+        if(editId===r.id)setEdit(null);
+        recs=recs.filter(function(x){return x.id!==r.id;});wr(K_R,recs);renderRecs();
+      };
+      var cr=document.createElement("div");cr.className="calrow";
+      var cb=document.createElement("button");cb.className="cal";cb.textContent="📅 캘린더 추가";
+      var cp=document.createElement("div");cp.className="calpanel";
+      [["■"+r.name+" 청구 시작일 365",s.cs],["■"+r.name+" 청구 종료일 365",s.ce],["■"+r.name+" 면책 시작 180",s.ms],["■"+r.name+" 면책 종료 180",s.free]].forEach(function(z){
+        var l=document.createElement("a");
+        l.href=gcal(z[0],z[1],s);l.target="_blank";l.rel="noopener";
+        var t1=document.createElement("span");t1.textContent=z[0];
+        var t2=document.createElement("span");t2.className="dd";t2.textContent=short(z[1])+" ＋";
+        l.appendChild(t1);l.appendChild(t2);cp.appendChild(l);
+      });
+      cb.onclick=function(){cp.classList.toggle("open");};
+      var ed=document.createElement("button");ed.className="cal";ed.textContent="✏ 수정";
+      ed.onclick=function(){
+        if(names.indexOf(r.name)<0){names.push(r.name);wr(K_N,names);}
+        openIds={};openIds[r.id]=true;
+        renderSelect(r.name);dateEl.value=r.date;calc();
+        setEdit(r.id);renderRecs();window.scrollTo(0,0);
+      };
+      var cbs=document.createElement("div");cbs.className="cbtns";cbs.appendChild(ed);cbs.appendChild(cb);
+      cr.appendChild(cp);cr.appendChild(cbs);
+      var isOpen=!!openIds[r.id];
+      if(isOpen)div.classList.add("sel");
+      div.appendChild(info);div.appendChild(del);
+      div.appendChild(cr);box.appendChild(div);
+    });
+    syncView();
+  }
+
+  $("addBtn").onclick=function(){
+    var v=$("newName").value.trim();if(!v)return;
+    if(names.indexOf(v)<0){names.push(v);wr(K_N,names);}
+    $("newName").value="";renderSelect(v);
+  };
+  $("newName").addEventListener("keydown",function(e){if(e.key==="Enter")$("addBtn").click();});
+
+  $("delBtn").onclick=function(){
+    var v=sel.value;if(!v||v===NEW)return;
+    if(!delArmed){
+      delArmed=true;this.textContent="삭제?";this.classList.add("armed");
+      delT=setTimeout(delReset,3000);
+      return;
+    }
+    delReset();
+    names=names.filter(function(n){return n!==v;});wr(K_N,names);renderSelect();
+  };
+
+  var editId=null;
+  function setEdit(id){
+    editId=id;
+    $("editBar").classList.toggle("hidden",!id);
+    $("saveRec").textContent=id?"수정 내용 저장":"이 진료 기록 저장";
+    syncView();
+  }
+  $("cancelEdit").onclick=function(){setEdit(null);};
+  $("saveRec").onclick=function(){
+    var name=sel.value, ds=dateEl.value;if(!name||name===NEW||!ds)return;
+    var msg;
+    if(editId){
+      var dupE=recs.some(function(r){return r.id!==editId&&r.name===name&&r.date===ds;});
+      if(dupE){msg="같은 기록이 이미 있습니다";}
+      else{
+        recs.forEach(function(r){if(r.id===editId){r.name=name;r.date=ds;}});
+        wr(K_R,recs);setEdit(null);msg="수정했습니다 ✓";
+      }
+    }else{
+      var dup=recs.some(function(r){return r.name===name&&r.date===ds;});
+      if(!dup){recs.push({id:Date.now()+"_"+Math.floor(Math.random()*1000),name:name,date:ds,mode:"excl"});wr(K_R,recs);}
+      msg=dup?"이미 저장된 기록입니다":"저장했습니다 ✓";
+    }
+    renderRecs();
+    var b=$("saveRec");b.textContent=msg;
+    setTimeout(function(){b.textContent=editId?"수정 내용 저장":"이 진료 기록 저장";},1800);
+  };
+  sel.onchange=sync;
+  dateEl.onchange=calc;
+  window.addEventListener("resize",calc);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden){calc();renderRecs();}});
+
+  function bmsg(t){var m=$("bmsg");m.textContent=t;m.classList.remove("hidden");}
+  $("exp").onclick=function(){
+    var txt=JSON.stringify({v:1,names:names,records:recs});
+    $("box").value=txt;$("box").select();
+    var done=false;
+    try{if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){bmsg("백업을 복사했습니다. 메모 앱에 붙여 넣어 보관하세요.");});done=true;}}catch(e){}
+    if(!done)bmsg("위 글자를 길게 눌러 복사한 뒤 메모 앱에 보관하세요.");
+  };
+  $("imp").onclick=function(){
+    try{
+      var o=JSON.parse($("box").value.trim());
+      if(!o||!Array.isArray(o.names)||!Array.isArray(o.records))throw 0;
+      o.names.forEach(function(n){if(typeof n==="string"&&names.indexOf(n)<0)names.push(n);});
+      o.records.forEach(function(r){
+        if(r&&r.name&&r.date&&!recs.some(function(x){return x.name===r.name&&x.date===r.date;})){
+          recs.push({id:r.id||Date.now()+"_"+Math.floor(Math.random()*1000),name:r.name,date:r.date,mode:"excl"});
+        }
+      });
+      wr(K_N,names);wr(K_R,recs);renderSelect();renderRecs();
+      bmsg("복원했습니다.");
+    }catch(e){bmsg("백업 글자 형식이 올바르지 않습니다.");}
+  };
+
+  function resetApp(){
+    setEdit(null);
+    dateEl.value="";
+    openIds={};
+    $("newName").value="";
+    renderSelect();
+    renderRecs();
+    var dt=document.querySelector("details");if(dt)dt.open=false;
+    $("box").value="";$("bmsg").classList.add("hidden");
+    window.scrollTo(0,0);
+  }
+  $("home").onclick=resetApp;
+  $("home").addEventListener("keydown",function(e){if(e.key==="Enter")resetApp();});
+
+  var K_H="ins_rechide_v1", recHide=false;
+  function applyHide(){
+    $("recBody").classList.toggle("hidden",recHide);
+    $("recArrow").textContent=recHide?"▸":"▾";
+  }
+  function toggleRecs(){recHide=!recHide;wr(K_H,recHide);applyHide();}
+  $("recHead").onclick=toggleRecs;
+  $("recHead").addEventListener("keydown",function(e){if(e.key==="Enter")toggleRecs();});
+
+  load();recHide=rd(K_H)===true;applyHide();renderSelect();renderRecs();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+</body>
+</html>
