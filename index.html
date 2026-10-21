@@ -56,7 +56,14 @@ button.save{width:100%;margin-top:7px;padding:9px}
 .res:first-child{margin-top:0}
 .res b{font-size:15px;white-space:nowrap}
 .rem{font-size:12px;font-weight:700;margin-left:2px}
-.rem.over{opacity:.7}
+.rem.over{opacity:1}
+.res.past>*{opacity:.4}
+.res:not(.past){box-shadow:0 6px 12px rgba(0,0,0,.32),0 2px 3px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 0 rgba(0,0,0,.08)}
+.pd{opacity:.4}
+.rec .ln.pl{opacity:.4}
+.res:not(.past)>span:first-child{font-weight:700}
+.nd{font-weight:700}
+.rec .ln:not(.c):not(.mm) .nd{color:var(--text)}
 .plain{background:var(--bg);border:1px solid var(--line)}
 .start{background:var(--ok-bg);color:var(--ok)}
 .end{background:var(--end-bg);color:var(--end)}
@@ -72,7 +79,7 @@ button.save{width:100%;margin-top:7px;padding:9px}
 .bar.x i{background:var(--sub)}
 .bar.warn i{background:var(--danger)}
 .pt{font-size:11px;font-weight:400;color:var(--sub);white-space:nowrap}
-.rec .lb{display:inline-block;width:5em;white-space:nowrap;margin-right:.1em;vertical-align:top}
+.rec .lb{display:inline-block;width:5em;white-space:nowrap;margin-right:.1em;vertical-align:top;font-weight:700}
 .rec .lb.sp{letter-spacing:.333em}
 .calrow{flex:1 1 100%;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .calrow button.cal{padding:4px 10px;font-size:12px;color:var(--accent);border-color:var(--accent)}
@@ -99,10 +106,15 @@ body.viewing #saveRec{display:none}
 .rec.sel{scroll-margin-top:150px}
 .rec .ln{font-size:12.5px;color:var(--sub)}
 .rec .ln.c{color:var(--ok)}
+.rec .ln.mm{color:var(--end)}
 .rec .tg{font-size:12.5px;font-weight:700;color:var(--ok)}
 .rec .tg.m{color:var(--end)}
 .rec .tg.x{color:var(--sub);font-weight:400}
 .rec .tg.warn{color:var(--danger)}
+.rec .tg{display:inline-block;padding:2px 9px;margin-left:2px;border-radius:999px;border:1px solid var(--line);background:var(--card);background:color-mix(in srgb,var(--ok) 14%,var(--card));box-shadow:0 3px 6px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+.rec .tg.m{background:var(--card);background:color-mix(in srgb,var(--end) 16%,var(--card))}
+.rec .tg.x{background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.rec .tg.warn{background:var(--card);background:color-mix(in srgb,var(--danger) 14%,var(--card))}
 .rec button{padding:4px 9px;font-size:12px;color:var(--danger)}
 details summary{cursor:pointer;font-size:14px;font-weight:600}
 .msg{font-size:12px;color:var(--ok);margin-top:5px}
@@ -213,7 +225,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
   }
   function daysLeft(d){var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());return Math.round((d-t)/86400000);}
   function setR(id,d,withLeft){
-    var b=$(id);b.textContent=fmt(d)+" ";
+    var b=$(id);b.textContent=fmt(d)+" ";b.parentNode.classList.toggle("past",daysLeft(d)<0);
     if(withLeft){
       var n=daysLeft(d),sp=document.createElement("span");
       sp.className="rem"+(n<0?" over":"");
@@ -283,13 +295,22 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
       var pt=document.createElement("span");pt.className="pt";pt.textContent=p.lab;
       pg.appendChild(bar);pg.appendChild(pt);a.appendChild(pg);
       info.appendChild(a);
-      [["청구가능일",short(s.cs)+" ~ "+short(s.ce),"ln c"],
-       ["진료시작일",short(s.d0),"ln"],
-       ["면책기간",short(s.ms)+" ~ "+short(s.free),"ln"]].forEach(function(x){
+      [["청구가능일",[s.cs,s.ce],"ln"+(p.k==="c"?" c":"")],
+       ["진료시작일",[s.d0],"ln"],
+       ["면책기간",[s.ms,s.free],"ln"+(p.k==="m"?" mm":"")]].forEach(function(x){
         var d=document.createElement("div");d.className=x[2];
+        var allPast=x[1].every(function(dd){return daysLeft(dd)<0;});
+        if(allPast)d.className+=" pl";
         var bl=document.createElement("span");bl.textContent="• ";
         var lb=document.createElement("span");lb.className="lb"+(x[0].length<5?" sp":"");lb.textContent=x[0];
-        var vl=document.createElement("span");vl.textContent=": "+x[1];
+        var vl=document.createElement("span");
+        vl.appendChild(document.createTextNode(": "));
+        x[1].forEach(function(dd,i){
+          if(i)vl.appendChild(document.createTextNode(" ~ "));
+          var sp=document.createElement("span");sp.textContent=short(dd);
+          sp.className=allPast?"":(daysLeft(dd)<0?"pd":"nd");
+          vl.appendChild(sp);
+        });
         d.appendChild(bl);d.appendChild(lb);d.appendChild(vl);info.appendChild(d);
       });
       info.onclick=function(){
