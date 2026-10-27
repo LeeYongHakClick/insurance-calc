@@ -59,7 +59,7 @@ button.save{width:100%;margin-top:7px;padding:9px}
 .rec .memo{flex:1 1 100%;font-size:12.5px;color:var(--sub);line-height:1.35;cursor:pointer}
 .rec .memo.ln{display:flex}
 .rec .memo .lb{flex:none;min-width:0;width:5em}
-.rec .memo .lb.mlb{letter-spacing:3em}
+.rec .memo .lb.mlb{letter-spacing:0;width:auto;margin-right:0}
 .rec .memo .mv{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
 .rec .memo .mc{flex:none;white-space:pre}
 .rec .memo.has .mv{color:var(--text);font-weight:600}
@@ -387,7 +387,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
         mb.className="memo ln"+(r.memo?" has":"");
         var mbl=document.createElement("span");mbl.textContent="•\u00A0";
         var mlb=document.createElement("span");mlb.className="lb mlb";mlb.textContent="메모";
-        var mc=document.createElement("span");mc.className="mc";mc.textContent=":\u00A0";
+        var mc=document.createElement("span");mc.className="mc";mc.textContent="\u00A0:\u00A0";
         var mv=document.createElement("span");mv.className="mv";mv.textContent=r.memo||"탭하여 메모 입력";
         mb.appendChild(mbl);mb.appendChild(mlb);mb.appendChild(mc);mb.appendChild(mv);
         mb.onclick=function(){memoEdit=r.id;memoDraft=r.memo||"";renderRecs();};
