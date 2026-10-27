@@ -4,11 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>보험 청구일 계산기</title>
 <style>
 :root{
@@ -153,8 +148,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
     <input type="date" id="date">
   </div>
 
-  <div class="card" id="resCard">
-    <div class="hint" id="empty">진료명과 진료시작일을 입력하면 결과가 표시됩니다.</div>
+  <div class="card hidden" id="resCard">
     <div id="results" class="hidden">
       <div class="res start"><span id="l1"></span><b id="r1"></b></div>
       <div class="res end"><span id="l2"></span><b id="r2"></b></div>
@@ -255,7 +249,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
   function calc(){
     var name=sel.value, ds=dateEl.value, ok=name&&name!==NEW&&ds;
     $("results").classList.toggle("hidden",!ok);
-    $("empty").classList.toggle("hidden",!!ok);
+    $("resCard").classList.toggle("hidden",!ok);
     if(!ok)return;
     var s=span(ds);
     setR("r1",s.cs,false);fitLabel("l1",name,"청구 시작일");
@@ -310,8 +304,8 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
       var pt=document.createElement("span");pt.className="pt";pt.textContent=p.lab;
       pg.appendChild(bar);pg.appendChild(pt);a.appendChild(pg);
       info.appendChild(a);
-      [["청구가능일",[s.cs,s.ce],"ln"+(p.k==="c"?" c":"")],
-       ["진료시작일",[s.d0],"ln"],
+      [["진료시작일",[s.d0],"ln"],
+       ["청구가능일",[s.cs,s.ce],"ln"+(p.k==="c"?" c":"")],
        ["면책기간",[s.ms,s.free],"ln"+(p.k==="m"?" mm":"")]].forEach(function(x){
         var d=document.createElement("div");d.className=x[2];
         var allPast=x[1].every(function(dd){return daysLeft(dd)<0;});
@@ -504,9 +498,6 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
 
   load();recHide=rd(K_H)===true;applyHide();renderSelect();renderRecs();
 })();
-</script>
-<script>
-if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
 </script>
 </body>
 </html>
