@@ -61,6 +61,19 @@ button.save{width:100%;margin-top:7px;padding:9px}
 .res:not(.past){transform:translateY(-2px);box-shadow:0 9px 18px rgba(0,0,0,.40),0 3px 5px rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.65),inset 0 -3px 0 rgba(0,0,0,.14)}
 .pd{opacity:.55}
 .rec .ln.pl{opacity:.55}
+.rec .memo{flex:1 1 100%;font-size:12.5px;color:var(--sub);line-height:1.35;cursor:pointer}
+.rec .memo.ln{display:flex}
+.rec .memo .lb{flex:none;min-width:0;width:5em}
+.rec .memo .lb.mlb{letter-spacing:3em}
+.rec .memo .mv{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+.rec .memo.has .mv{color:var(--text);font-weight:600}
+.rec .memo:not(.has) .mv{opacity:.6}
+.rec .memo.edit{cursor:default}
+.rec .memo textarea{font-size:14px;min-height:60px}
+.rec .mrow{display:flex;gap:6px;margin-top:5px;justify-content:flex-end}
+.rec .mrow button{padding:5px 14px;font-size:13px}
+.rec .mrow button.primary{color:var(--accent-text)}
+.rec .mrow button:not(.primary){color:var(--text)}
 .res:not(.past)>span:first-child{font-weight:700}
 .nd{font-weight:700}
 .rec .ln:not(.c):not(.mm) .nd{color:var(--text)}
@@ -255,6 +268,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
     return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(title)+"&dates="+ymd(d)+"/"+ymd(add(d,1))+"&details="+encodeURIComponent("진료시작일 "+short(s.d0));
   }
   var openIds={};
+  var memoEdit=null,memoDraft="";
   function syncView(){document.body.classList.toggle("viewing",Object.keys(openIds).length>0&&!editId);}
   function mkRow(cls,label,d,withLeft){
     var row=document.createElement("div");row.className="res "+cls;
@@ -357,6 +371,32 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
       var isOpen=!!openIds[r.id];
       if(isOpen)div.classList.add("sel");
       div.appendChild(info);div.appendChild(del);
+      var mb=document.createElement("div");
+      if(memoEdit===r.id){
+        mb.className="memo edit";
+        var ta=document.createElement("textarea");ta.maxLength=300;ta.rows=2;ta.placeholder="메모를 입력하세요";
+        ta.value=memoDraft;
+        ta.oninput=function(){memoDraft=ta.value;};
+        var mr=document.createElement("div");mr.className="mrow";
+        var sv=document.createElement("button");sv.className="primary";sv.textContent="저장";
+        var cn=document.createElement("button");cn.textContent="취소";
+        sv.onclick=function(){
+          var v=ta.value.trim();
+          if(v)r.memo=v;else delete r.memo;
+          wr(K_R,recs);memoEdit=null;renderRecs();
+        };
+        cn.onclick=function(){memoEdit=null;renderRecs();};
+        mr.appendChild(sv);mr.appendChild(cn);mb.appendChild(ta);mb.appendChild(mr);
+        setTimeout(function(){ta.focus();},0);
+      }else{
+        mb.className="memo ln"+(r.memo?" has":"");
+        var mbl=document.createElement("span");mbl.textContent="•\u00A0";
+        var mlb=document.createElement("span");mlb.className="lb mlb";mlb.textContent="메모";
+        var mv=document.createElement("span");mv.className="mv";mv.textContent=": "+(r.memo||"탭하여 메모 입력");
+        mb.appendChild(mbl);mb.appendChild(mlb);mb.appendChild(mv);
+        mb.onclick=function(){memoEdit=r.id;memoDraft=r.memo||"";renderRecs();};
+      }
+      div.appendChild(mb);
       div.appendChild(cr);box.appendChild(div);
     });
     syncView();
@@ -427,7 +467,9 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
       o.names.forEach(function(n){if(typeof n==="string"&&names.indexOf(n)<0)names.push(n);});
       o.records.forEach(function(r){
         if(r&&r.name&&r.date&&!recs.some(function(x){return x.name===r.name&&x.date===r.date;})){
-          recs.push({id:r.id||Date.now()+"_"+Math.floor(Math.random()*1000),name:r.name,date:r.date,mode:"excl"});
+          var nr={id:r.id||Date.now()+"_"+Math.floor(Math.random()*1000),name:r.name,date:r.date,mode:"excl"};
+          if(typeof r.memo==="string"&&r.memo)nr.memo=r.memo;
+          recs.push(nr);
         }
       });
       wr(K_N,names);wr(K_R,recs);renderSelect();renderRecs();
@@ -438,7 +480,7 @@ details summary{cursor:pointer;font-size:14px;font-weight:600}
   function resetApp(){
     setEdit(null);
     dateEl.value="";
-    openIds={};
+    openIds={};memoEdit=null;
     $("newName").value="";
     renderSelect();
     renderRecs();
